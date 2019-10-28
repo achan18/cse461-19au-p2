@@ -119,40 +119,39 @@ class Part3Controller (object):
     # set an arbitrary ethaddr for cores21
     cores21_Addr = EthAddr("01:02:03:04:05:06")
 
-    if (packet.type == packet.ARP_REQUEST):
-      if (packet.payload.op_code == arp.REQUEST):
-        # create reply message
-        reply = arp()
-        reply.hwsrc = cores21_Addr
-        reply.hwdst = packet.src
-        reply.opcode = arp.REPLY
-        reply.protosrc = packet.payload.protodst
-        reply.protodst = packet.payload.protosrc
+    if packet.opcode == arp.REQUEST:
+      # create reply message
+      reply = arp()
+      reply.hwsrc = cores21_Addr
+      reply.hwdst = packet.src
+      reply.opcode = arp.REPLY
+      reply.protosrc = packet.payload.protodst
+      reply.protodst = packet.payload.protosrc
 
-        # wrap in ethernet wrapper
-        ether = ethernet()
-        ether.type = ethernet.ARP_TYPE
-        ether.dst = packet.src
-        ether.src = cores21_Addr
-        ether.payload = arp_reply
+      # wrap in ethernet wrapper
+      ether = ethernet()
+      ether.type = ethernet.ARP_TYPE
+      ether.dst = packet.src
+      ether.src = cores21_Addr
+      ether.payload = arp_reply
 
-        # create flowmod rule
-        fm = of.ofp_flow_mod()
-        fm.match.dl_type = 0x0800
-        fm.match.nw_proto = 1
-        fm.priority = 1 #might need to change later
+      # create flowmod rule
+      fm = of.ofp_flow_mod()
+      fm.match.dl_type = 0x0800
+      fm.match.nw_proto = 1
+      fm.priority = 1 #might need to change later
 
-        # find packets with dest as curPacket's source ip
-        fm.match.nw_dst = packet.payload.protosrc
-        # set mac address of packet to mac address of curPacket
-        fm.actions.append(of.ofp_action_dl_addr.set_dst(packet.src))
-        # set port to be the port that the curPacket used
-        fm.actions.append(of.ofp_action_output(port = port_in))
-        self.connection.send(fm)
+      # find packets with dest as curPacket's source ip
+      fm.match.nw_dst = packet.payload.protosrc
+      # set mac address of packet to mac address of curPacket
+      fm.actions.append(of.ofp_action_dl_addr.set_dst(packet.src))
+      # set port to be the port that the curPacket used
+      fm.actions.append(of.ofp_action_output(port = port_in))
+      self.connection.send(fm)
 
-        # send payload
-        ether.set_payload(reply)
-        self.resend_packet(ether, port_in)
+      # send payload
+      ether.set_payload(reply)
+      self.resend_packet(ether, port_in)
 
 
 def launch ():
