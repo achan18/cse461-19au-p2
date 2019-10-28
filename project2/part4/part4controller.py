@@ -123,7 +123,7 @@ class Part3Controller (object):
     cores21_Addr = EthAddr("01:02:03:04:05:06")
 
     packetVal = packet.next
-    if packetVal.opcode == arp.REQUEST:
+    if isinstance(packetVal, arp) and packetVal.opcode == arp.REQUEST:
       # create reply message
       reply = arp()
       reply.hwsrc = cores21_Addr
@@ -137,12 +137,10 @@ class Part3Controller (object):
       ether.type = ethernet.ARP_TYPE
       ether.dst = packetVal.hwsrc
       ether.src = cores21_Addr
-      ether.payload = arp_reply
 
       # create flowmod rule
       fm = of.ofp_flow_mod()
       fm.match.dl_type = 0x0800
-      fm.match.nw_proto = 1
       fm.priority = 1 #might need to change later
 
       # find packets with dest as curPacket's source ip
